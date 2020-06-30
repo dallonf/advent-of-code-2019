@@ -1,7 +1,9 @@
 // Day 1: The Tyranny of the Rocket Equation
 
+use crate::prelude::*;
+
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = crate::util::puzzle_input::load_input_for_day("01");
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::load_input_for_day("01");
 }
 
 pub fn fuel_amount(mass: i64) -> i64 {
@@ -41,7 +43,7 @@ mod part_one {
   #[test]
   fn part_one() {
     let result: i64 = PUZZLE_INPUT
-      .iter()
+      .par_iter()
       .map(|line| line.parse::<i64>().unwrap())
       .map(|num| fuel_amount(num))
       .sum();
@@ -61,7 +63,7 @@ mod part_two {
   #[test]
   fn part_two() {
     let result: i64 = PUZZLE_INPUT
-      .iter()
+      .par_iter()
       .map(|line| line.parse::<i64>().unwrap())
       .map(|num| recursive_fuel_amount(num))
       .sum();

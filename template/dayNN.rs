@@ -1,7 +1,9 @@
 // Day NN: Description
 
+use crate::prelude::*;
+
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = crate::util::puzzle_input::load_input_for_day("NN");
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::load_input_for_day("NN");
 }
 
 pub fn compute() -> i64 {}
