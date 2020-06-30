@@ -2,11 +2,11 @@
 
 use crate::prelude::*;
 
+pub fn compute() -> i64 {}
+
 lazy_static! {
   static ref PUZZLE_INPUT: Vec<String> = puzzle_input::load_input_for_day("NN");
 }
-
-pub fn compute() -> i64 {}
 
 #[cfg(test)]
 mod part_one {
