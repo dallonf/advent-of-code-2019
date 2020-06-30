@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::load_input_for_day("01");
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("01");
 }
 
 pub fn fuel_amount(mass: i64) -> i64 {
