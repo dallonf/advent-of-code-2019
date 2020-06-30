@@ -75,19 +75,20 @@ pub fn brute_force_answer(
   verb_addr: usize,
   desired_output: usize,
 ) -> (usize, usize) {
-  for noun_candidate in 0..100 {
-    for verb_candidate in 0..100 {
+  let candidates: Vec<_> = (0..100)
+    .flat_map(|noun_candidate| (0..100).map(move |verb_candidate| (noun_candidate, verb_candidate)))
+    .collect();
+
+  *candidates
+    .par_iter()
+    .find_any(move |&&(noun_candidate, verb_candidate)| {
       let mut candidate_sequence = sequence.clone();
       candidate_sequence[noun_addr] = noun_candidate;
       candidate_sequence[verb_addr] = verb_candidate;
       let result = compute(&mut candidate_sequence);
-      if result == desired_output {
-        return (noun_candidate, verb_candidate);
-      }
-    }
-  }
-
-  panic!("No answer found");
+      result == desired_output
+    })
+    .expect("No answer found")
 }
 
 lazy_static! {
