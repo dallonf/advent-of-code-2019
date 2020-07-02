@@ -80,8 +80,8 @@ pub fn brute_force_answer(
     .collect();
 
   *candidates
-    .par_iter()
-    .find_any(move |&&(noun_candidate, verb_candidate)| {
+    .iter()
+    .find(move |&&(noun_candidate, verb_candidate)| {
       let mut candidate_sequence = sequence.clone();
       candidate_sequence[noun_addr] = noun_candidate;
       candidate_sequence[verb_addr] = verb_candidate;
@@ -132,11 +132,14 @@ mod part_one {
 #[cfg(test)]
 mod part_two {
   use super::*;
+  use std::time;
   #[test]
   fn part_two() {
+    let start = time::Instant::now();
     let sequence = parse(&PUZZLE_INPUT);
     let (noun, verb) = brute_force_answer(&sequence, 1, 2, 19690720);
     let result = 100 * noun + verb;
     assert_eq!(result, 4925);
+    println!("Time: {}", start.elapsed().as_millis());
   }
 }
