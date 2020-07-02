@@ -140,6 +140,6 @@ mod part_two {
     let (noun, verb) = brute_force_answer(&sequence, 1, 2, 19690720);
     let result = 100 * noun + verb;
     assert_eq!(result, 4925);
-    println!("Time: {}", start.elapsed().as_millis());
+    println!("Time: {}", start.elapsed().as_micros());
   }
 }

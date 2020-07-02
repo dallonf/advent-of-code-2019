@@ -8,5 +8,8 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "jest": "^26.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15"
   }
 }
