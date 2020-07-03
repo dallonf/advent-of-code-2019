@@ -24,5 +24,5 @@ mod part_one {
 //   #[test]
 //   fn test_cases() {}
 //   #[test]
-//   fn part_two() {}
+//   fn answer() {}
 // }
