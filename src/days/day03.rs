@@ -1,0 +1,105 @@
+// Day 3: Crossed Wires
+
+use crate::prelude::*;
+use core::ops::{Add, Neg, Sub};
+use std::collections::HashSet;
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub struct Point(i32, i32);
+pub type Wire = HashSet<Point>;
+
+impl Point {
+  fn manhattan_distance_from_center(&self) -> i32 {
+    self.0.abs() + self.1.abs()
+  }
+}
+
+impl Add for Point {
+  type Output = Point;
+  fn add(self, rhs: Point) -> Self::Output {
+    Point(self.0 + rhs.0, self.1 + rhs.1)
+  }
+}
+
+impl Neg for Point {
+  type Output = Point;
+  fn neg(self) -> <Self as std::ops::Neg>::Output {
+    Point(-self.0, -self.1)
+  }
+}
+
+impl Sub for Point {
+  type Output = Point;
+  fn sub(self, rhs: Point) -> Self::Output {
+    self + -rhs
+  }
+}
+
+pub fn parse_wire(input: &str) -> Wire {
+  let mut current_location = Point(0, 0);
+  let mut result = HashSet::new();
+
+  let turns = input.split(",");
+
+  for turn in turns {
+    let (direction, num) = turn.split_at(1);
+    let num: i32 = num.parse().unwrap();
+    let move_in_direction: Box<dyn Fn(Point) -> Point> = match direction {
+      "U" => Box::new(|current_location| current_location - Point(0, 1)),
+      "D" => Box::new(|current_location| current_location + Point(0, 1)),
+      "L" => Box::new(|current_location| current_location - Point(1, 0)),
+      "R" => Box::new(|current_location| current_location + Point(1, 0)),
+      _ => panic!("Unexpected direction {}", direction),
+    };
+
+    for _ in 0..num {
+      current_location = move_in_direction(current_location);
+      result.insert(current_location);
+    }
+  }
+
+  result
+}
+
+pub fn get_closest_cross<'a>(wire1: &'a Wire, wire2: &'a Wire) -> Option<&'a Point> {
+  let cross_points = wire1.intersection(&wire2);
+  cross_points.min_by(|point1, point2| {
+    point1
+      .manhattan_distance_from_center()
+      .cmp(&point2.manhattan_distance_from_center())
+  })
+}
+
+lazy_static! {
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("03");
+}
+
+#[cfg(test)]
+mod part_one {
+  use super::*;
+
+  #[test]
+  fn example() {
+    let wire1 = parse_wire("R8,U5,L5,D3");
+    let wire2 = parse_wire("U7,R6,D4,L4");
+    let closest_cross = get_closest_cross(&wire1, &wire2);
+    assert_eq!(
+      closest_cross.map(|x| x.manhattan_distance_from_center()),
+      Some(6)
+    );
+  }
+
+  // #[test]
+  // fn test_cases() {}
+  // #[test]
+  // fn answer() {}
+}
+
+// #[cfg(test)]
+// mod part_two {
+//   use super::*;
+//   #[test]
+//   fn test_cases() {}
+//   #[test]
+//   fn part_two() {}
+// }
