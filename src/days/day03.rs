@@ -70,6 +70,12 @@ pub fn get_closest_cross<'a>(wire1: &'a Wire, wire2: &'a Wire) -> Option<&'a Poi
   })
 }
 
+pub fn get_closest_cross_distance_from_wire_strings(wire1: &str, wire2: &str) -> Option<i32> {
+  let wire1 = parse_wire(wire1);
+  let wire2 = parse_wire(wire2);
+  get_closest_cross(&wire1, &wire2).map(|x| x.manhattan_distance_from_center())
+}
+
 lazy_static! {
   static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("03");
 }
@@ -89,10 +95,31 @@ mod part_one {
     );
   }
 
-  // #[test]
-  // fn test_cases() {}
-  // #[test]
-  // fn answer() {}
+  #[test]
+  fn test_cases() {
+    assert_eq!(
+      get_closest_cross_distance_from_wire_strings(
+        "R75,D30,R83,U83,L12,D49,R71,U7,L72",
+        "U62,R66,U55,R34,D71,R55,D58,R83"
+      ),
+      Some(159)
+    );
+    assert_eq!(
+      get_closest_cross_distance_from_wire_strings(
+        "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51",
+        "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
+      ),
+      Some(135)
+    );
+  }
+
+  #[test]
+  fn answer() {
+    assert_eq!(
+      get_closest_cross_distance_from_wire_strings(&PUZZLE_INPUT[0], &PUZZLE_INPUT[1]),
+      Some(308)
+    )
+  }
 }
 
 // #[cfg(test)]
