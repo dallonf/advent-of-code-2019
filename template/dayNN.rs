@@ -5,7 +5,7 @@ use crate::prelude::*;
 pub fn compute() -> i64 {}
 
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::load_input_for_day("NN");
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("NN");
 }
 
 #[cfg(test)]
