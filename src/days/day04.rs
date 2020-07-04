@@ -69,9 +69,10 @@ pub fn is_valid_password_mk2(input: u32) -> bool {
   repeated == 2 || double_rule
 }
 
-pub fn count_valid_passwords_mk2(passwords: Vec<u32>) -> usize {
+pub fn count_valid_passwords_mk2(passwords: &[u32]) -> usize {
   passwords
     .into_par_iter()
+    .cloned()
     .filter(|x| is_valid_password_mk2(*x))
     .count()
 }
@@ -114,7 +115,7 @@ mod part_two {
   #[test]
   fn answer() {
     let result = count_valid_passwords_mk2(
-      (PUZZLE_INPUT.0..PUZZLE_INPUT.1)
+      &(PUZZLE_INPUT.0..PUZZLE_INPUT.1)
         .into_iter()
         .collect::<Vec<u32>>(),
     );
