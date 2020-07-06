@@ -5,4 +5,5 @@ extern crate rayon;
 mod prelude;
 
 pub mod days;
-pub mod util;
+pub mod logic;
+mod util;
