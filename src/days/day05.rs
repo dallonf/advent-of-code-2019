@@ -47,7 +47,7 @@ mod part_one {
 mod part_two {
   use super::*;
   #[test]
-  fn test_cases() {
+  fn test_comparison() {
     // Position mode, output = input == 8
     assert_eq!(
       intcode::parse_and_compute("3,9,8,9,10,9,4,9,99,-1,8", Some(8)),
@@ -88,6 +88,7 @@ mod part_two {
       Some(0)
     );
   }
+
   // #[test]
   // fn answer() {}
 }

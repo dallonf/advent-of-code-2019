@@ -19,6 +19,14 @@ impl IntcodeIndexable for IntcodeSequence {
     self[usize::try_from(i).unwrap()] = val;
   }
 }
+trait Unsign {
+  fn expect_unsigned(self) -> usize;
+}
+impl Unsign for isize {
+  fn expect_unsigned(self) -> usize {
+    self.try_into().unwrap()
+  }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum ProgramState {
@@ -69,6 +77,50 @@ pub fn compute_instruction(
         pointer: instruction.next_pointer,
         output: instruction.parameters[0],
       }
+    }
+    5 => {
+      // Jump If True
+      let instruction = parse_instruction(&sequence, instruction_pointer, 2);
+      if instruction.parameters[0] != 0 {
+        ProgramState::Continue(instruction.parameters[1].expect_unsigned())
+      } else {
+        ProgramState::Continue(instruction.next_pointer)
+      }
+    }
+    6 => {
+      // Jump If False
+      let instruction = parse_instruction(&sequence, instruction_pointer, 2);
+      if instruction.parameters[0] == 0 {
+        ProgramState::Continue(instruction.parameters[1].expect_unsigned())
+      } else {
+        ProgramState::Continue(instruction.next_pointer)
+      }
+    }
+    7 => {
+      // Less Than
+      let instruction = parse_instruction(&sequence, instruction_pointer, 3);
+      sequence.set(
+        instruction.raw_parameters[2],
+        if instruction.parameters[0] < instruction.parameters[1] {
+          1
+        } else {
+          0
+        },
+      );
+      ProgramState::Continue(instruction.next_pointer)
+    }
+    8 => {
+      // Equals
+      let instruction = parse_instruction(&sequence, instruction_pointer, 3);
+      sequence.set(
+        instruction.raw_parameters[2],
+        if instruction.parameters[0] == instruction.parameters[1] {
+          1
+        } else {
+          0
+        },
+      );
+      ProgramState::Continue(instruction.next_pointer)
     }
     99 => ProgramState::Halt,
     _ => {
