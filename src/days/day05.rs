@@ -43,11 +43,51 @@ mod part_one {
   }
 }
 
-// #[cfg(test)]
-// mod part_two {
-//   use super::*;
-//   #[test]
-//   fn test_cases() {}
-//   #[test]
-//   fn answer() {}
-// }
+#[cfg(test)]
+mod part_two {
+  use super::*;
+  #[test]
+  fn test_cases() {
+    // Position mode, output = input == 8
+    assert_eq!(
+      intcode::parse_and_compute("3,9,8,9,10,9,4,9,99,-1,8", Some(8)),
+      Some(1)
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,9,8,9,10,9,4,9,99,-1,8", Some(5)),
+      Some(0)
+    );
+
+    // Position mode, output = input < 8
+    assert_eq!(
+      intcode::parse_and_compute("3,9,7,9,10,9,4,9,99,-1,8", Some(2)),
+      Some(1)
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,9,7,9,10,9,4,9,99,-1,8", Some(10)),
+      Some(0)
+    );
+
+    // Immediate mode, output = input == 8
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1108,-1,8,3,4,3,99", Some(8)),
+      Some(1)
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1108,-1,8,3,4,3,99", Some(5)),
+      Some(0)
+    );
+
+    // Immediate mode, output = input < 8
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1107,-1,8,3,4,3,99", Some(2)),
+      Some(1)
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1107,-1,8,3,4,3,99", Some(10)),
+      Some(0)
+    );
+  }
+  // #[test]
+  // fn answer() {}
+}
