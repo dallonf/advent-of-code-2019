@@ -1,11 +1,13 @@
+use std::convert::{TryFrom, TryInto};
+
 pub mod compat;
 
-pub type IntcodeSequence = Vec<usize>;
+pub type IntcodeSequence = Vec<isize>;
 
 #[derive(Debug, PartialEq)]
 pub enum ProgramState {
   Continue(usize),
-  OutputAndContinue { pointer: usize, output: usize },
+  OutputAndContinue { pointer: usize, output: isize },
   Halt,
 }
 
@@ -16,7 +18,7 @@ pub fn parse(input: &str) -> IntcodeSequence {
 pub fn compute_instruction(
   sequence: &mut IntcodeSequence,
   instruction_pointer: usize,
-  input: Option<usize>,
+  input: Option<isize>,
 ) -> ProgramState {
   let instruction = sequence[instruction_pointer];
   let opcode = instruction % 100;
@@ -26,7 +28,7 @@ pub fn compute_instruction(
       let instruction = parse_instruction(&sequence, instruction_pointer, 3);
       let a = instruction.parameters[0];
       let b = instruction.parameters[1];
-      let result = &mut sequence[instruction.raw_parameters[2]];
+      let result = &mut sequence[usize::try_from(instruction.raw_parameters[2]).unwrap()];
       *result = a + b;
       ProgramState::Continue(instruction.next_pointer)
     }
@@ -35,7 +37,7 @@ pub fn compute_instruction(
       let instruction = parse_instruction(&sequence, instruction_pointer, 3);
       let a = instruction.parameters[0];
       let b = instruction.parameters[1];
-      let result = &mut sequence[instruction.raw_parameters[2]];
+      let result = &mut sequence[usize::try_from(instruction.raw_parameters[2]).unwrap()];
       *result = a * b;
       ProgramState::Continue(instruction.next_pointer)
     }
@@ -43,7 +45,8 @@ pub fn compute_instruction(
       // Input
       let instruction = parse_instruction(&sequence, instruction_pointer, 1);
       let destination_addr = instruction.raw_parameters[0];
-      sequence[destination_addr] = input.expect("Program expected input!");
+      sequence[usize::try_from(destination_addr).unwrap()] =
+        input.expect("Program expected input!");
       ProgramState::Continue(instruction.next_pointer)
     }
     4 => {
@@ -64,9 +67,9 @@ pub fn compute_instruction(
   }
 }
 
-pub fn compute(sequence: &mut IntcodeSequence, input: Option<usize>) -> Option<usize> {
+pub fn compute(sequence: &mut IntcodeSequence, input: Option<isize>) -> Option<isize> {
   let mut instruction_pointer = 0;
-  let mut output: Option<usize> = None;
+  let mut output: Option<isize> = None;
   loop {
     let result = compute_instruction(sequence, instruction_pointer, input);
     match result {
@@ -85,13 +88,13 @@ pub fn compute(sequence: &mut IntcodeSequence, input: Option<usize>) -> Option<u
 
 #[derive(Debug, PartialEq, Eq)]
 struct InstructionParameters {
-  raw_parameters: Vec<usize>,
+  raw_parameters: Vec<isize>,
   parameter_modes: Vec<u8>,
-  parameters: Vec<usize>,
+  parameters: Vec<isize>,
   next_pointer: usize,
 }
 
-pub fn parse_and_compute(code: &str, input: Option<usize>) -> Option<usize> {
+pub fn parse_and_compute(code: &str, input: Option<isize>) -> Option<isize> {
   let mut sequence = parse(code);
   compute(&mut sequence, input)
 }
@@ -101,15 +104,15 @@ fn parse_instruction(
   pointer: usize,
   num_params: u8,
 ) -> InstructionParameters {
-  let raw_parameters: Vec<usize> = (1..num_params + 1)
-    .map(|i| sequence[pointer + i as usize])
+  let raw_parameters: Vec<isize> = (1..num_params + 1)
+    .map(|i| sequence[pointer + usize::from(i)])
     .collect();
 
-  let instruction = sequence[pointer];
+  let instruction: usize = sequence[pointer].try_into().unwrap();
   let parameter_modes: Vec<u8> = (0..num_params)
     .map(|i| {
       let place = 10usize.pow((i + 2).into());
-      ((instruction / place) % 10) as u8
+      ((instruction / place) % 10).try_into().unwrap()
     })
     .collect();
 
@@ -121,7 +124,7 @@ fn parse_instruction(
       match param_mode {
         0 => {
           // Position Mode
-          sequence[raw_param]
+          sequence[usize::try_from(raw_param).unwrap()]
         }
         1 => {
           // Immediate Mode
@@ -139,7 +142,7 @@ fn parse_instruction(
     raw_parameters,
     parameter_modes,
     parameters,
-    next_pointer: pointer + 1 + num_params as usize,
+    next_pointer: pointer + 1 + usize::from(num_params),
   }
 }
 

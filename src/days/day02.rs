@@ -2,6 +2,7 @@
 
 use crate::intcode;
 use crate::prelude::*;
+use std::convert::TryInto;
 
 pub fn brute_force_answer(
   sequence: &intcode::IntcodeSequence,
@@ -9,16 +10,16 @@ pub fn brute_force_answer(
   verb_addr: usize,
   desired_output: usize,
 ) -> (usize, usize) {
-  let candidates: Vec<_> = (0..100)
+  let candidates: Vec<(usize, usize)> = (0..100)
     .flat_map(|noun_candidate| (0..100).map(move |verb_candidate| (noun_candidate, verb_candidate)))
     .collect();
 
-  *candidates
-    .iter()
-    .find(move |&&(noun_candidate, verb_candidate)| {
+  candidates
+    .into_iter()
+    .find(move |&(noun_candidate, verb_candidate)| {
       let mut candidate_sequence = sequence.clone();
-      candidate_sequence[noun_addr] = noun_candidate;
-      candidate_sequence[verb_addr] = verb_candidate;
+      candidate_sequence[noun_addr] = noun_candidate.try_into().unwrap();
+      candidate_sequence[verb_addr] = verb_candidate.try_into().unwrap();
       let result = intcode::compat::compute_v02(&mut candidate_sequence);
       result == desired_output
     })

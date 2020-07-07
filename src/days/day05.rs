@@ -7,6 +7,10 @@ lazy_static! {
   static ref PUZZLE_INPUT: String = puzzle_input::string_for_day("05");
 }
 
+pub fn get_diagnostic_code(input: isize) -> isize {
+  intcode::parse_and_compute(&PUZZLE_INPUT, Some(input)).unwrap()
+}
+
 #[cfg(test)]
 mod part_one {
   use super::*;
@@ -27,9 +31,16 @@ mod part_one {
   }
 
   #[test]
-  fn test_cases() {}
-  // #[test]
-  // fn answer() {}
+  fn negative_integers() {
+    let mut code = intcode::parse("1101,100,-1,4,0");
+    intcode::compute(&mut code, None);
+    assert_eq!(code, vec![1101, 100, -1, 4, 99]);
+  }
+
+  #[test]
+  fn answer() {
+    assert_eq!(get_diagnostic_code(1), 13787043);
+  }
 }
 
 // #[cfg(test)]
