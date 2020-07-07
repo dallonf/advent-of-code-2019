@@ -89,6 +89,38 @@ mod part_two {
     );
   }
 
+  #[test]
+  fn test_jump() {
+    // Position mode
+    assert_eq!(
+      intcode::parse_and_compute("3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9", Some(0)),
+      Some(0),
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9", Some(1)),
+      Some(1),
+    );
+
+    // Immediate mode
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1105,-1,9,1101,0,0,12,4,12,99,1", Some(0)),
+      Some(0),
+    );
+    assert_eq!(
+      intcode::parse_and_compute("3,3,1105,-1,9,1101,0,0,12,4,12,99,1", Some(1)),
+      Some(1),
+    );
+  }
+
+  #[test]
+  fn test_larger() {
+    let program = intcode::parse("3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99");
+
+    assert_eq!(intcode::compute(&mut program.clone(), Some(3)), Some(999));
+    assert_eq!(intcode::compute(&mut program.clone(), Some(8)), Some(1000));
+    assert_eq!(intcode::compute(&mut program.clone(), Some(11)), Some(1001));
+  }
+
   // #[test]
   // fn answer() {}
 }
