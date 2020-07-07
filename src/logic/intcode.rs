@@ -23,16 +23,12 @@ pub fn compute_instruction(
   match opcode {
     1 => {
       // Add
-      let a_addr = sequence[instruction_pointer + 1];
-      let b_addr = sequence[instruction_pointer + 2];
-      let result_addr = sequence[instruction_pointer + 3];
-
-      let a = sequence[a_addr];
-      let b = sequence[b_addr];
-      let result = &mut sequence[result_addr];
+      let instruction = parse_instruction(&sequence, instruction_pointer, 3);
+      let a = instruction.parameters[0];
+      let b = instruction.parameters[1];
+      let result = &mut sequence[instruction.raw_parameters[2]];
       *result = a + b;
-
-      ProgramState::Continue(instruction_pointer + 4)
+      ProgramState::Continue(instruction.next_pointer)
     }
     2 => {
       // Multiply
@@ -45,19 +41,17 @@ pub fn compute_instruction(
     }
     3 => {
       // Input
-      let destination_addr = sequence[instruction_pointer + 1];
+      let instruction = parse_instruction(&sequence, instruction_pointer, 1);
+      let destination_addr = instruction.raw_parameters[0];
       sequence[destination_addr] = input.expect("Program expected input!");
-
-      ProgramState::Continue(instruction_pointer + 2)
+      ProgramState::Continue(instruction.next_pointer)
     }
     4 => {
       // Output
-      let source_addr = sequence[instruction_pointer + 1];
-      let value = sequence[source_addr];
-
+      let instruction = parse_instruction(&sequence, instruction_pointer, 1);
       ProgramState::OutputAndContinue {
-        pointer: instruction_pointer + 2,
-        output: value,
+        pointer: instruction.next_pointer,
+        output: instruction.parameters[0],
       }
     }
     99 => ProgramState::Halt,
