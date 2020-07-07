@@ -1,6 +1,6 @@
 // Day 2: 1202 Program Alarm
 
-use crate::logic::intcode;
+use crate::intcode;
 use crate::prelude::*;
 
 pub fn brute_force_answer(
@@ -19,7 +19,7 @@ pub fn brute_force_answer(
       let mut candidate_sequence = sequence.clone();
       candidate_sequence[noun_addr] = noun_candidate;
       candidate_sequence[verb_addr] = verb_candidate;
-      let result = intcode::compute(&mut candidate_sequence);
+      let result = intcode::compat::compute_v02(&mut candidate_sequence);
       result == desired_output
     })
     .expect("No answer found")
@@ -45,13 +45,16 @@ mod part_one {
   #[test]
   fn detailed_test_case() {
     let program = "1,9,10,3,2,3,11,0,99,30,40,50";
-    assert_eq!(intcode::parse_and_compute(program), 3500);
+    assert_eq!(intcode::compat::parse_and_compute_v02(program), 3500);
   }
 
   #[test]
   fn test_cases() {
-    assert_eq!(intcode::parse_and_compute("1,0,0,0,99"), 2);
-    assert_eq!(intcode::parse_and_compute("1,1,1,4,99,5,6,0,99"), 30);
+    assert_eq!(intcode::compat::parse_and_compute_v02("1,0,0,0,99"), 2);
+    assert_eq!(
+      intcode::compat::parse_and_compute_v02("1,1,1,4,99,5,6,0,99"),
+      30
+    );
   }
 
   #[test]
@@ -59,7 +62,7 @@ mod part_one {
     let mut sequence = intcode::parse(&PUZZLE_INPUT);
     sequence[1] = 12;
     sequence[2] = 2;
-    assert_eq!(intcode::compute(&mut sequence), 5305097);
+    assert_eq!(intcode::compat::compute_v02(&mut sequence), 5305097);
   }
 }
 

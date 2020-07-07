@@ -5,5 +5,7 @@ extern crate rayon;
 mod prelude;
 
 pub mod days;
-pub mod logic;
+mod logic;
 mod util;
+
+pub use logic::intcode;

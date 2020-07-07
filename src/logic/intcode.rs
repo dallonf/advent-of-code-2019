@@ -1,3 +1,5 @@
+pub mod compat;
+
 pub type IntcodeSequence = Vec<usize>;
 
 #[derive(Debug, PartialEq)]
@@ -10,7 +12,10 @@ pub fn parse(input: &str) -> IntcodeSequence {
   input.split(",").map(|num| num.parse().unwrap()).collect()
 }
 
-pub fn compute_instruction(sequence: &mut IntcodeSequence, instruction_pointer: usize) -> ProgramState {
+pub fn compute_instruction(
+  sequence: &mut IntcodeSequence,
+  instruction_pointer: usize,
+) -> ProgramState {
   let instruction = sequence[instruction_pointer];
   match instruction {
     1 => {
@@ -49,18 +54,18 @@ pub fn compute_instruction(sequence: &mut IntcodeSequence, instruction_pointer: 
   }
 }
 
-pub fn compute(sequence: &mut IntcodeSequence) -> usize {
+pub fn compute(sequence: &mut IntcodeSequence, input: Option<usize>) -> Option<usize> {
   let mut instruction_pointer = 0;
   loop {
     let result = compute_instruction(sequence, instruction_pointer);
     match result {
       ProgramState::Continue(new_position) => instruction_pointer = new_position,
-      ProgramState::Halt => return sequence[0],
+      ProgramState::Halt => return None,
     }
   }
 }
 
-pub fn parse_and_compute(input: &str) -> usize {
-  let mut sequence = parse(input);
-  compute(&mut sequence)
-}
+// pub fn parse_and_compute(input: &str) -> usize {
+//   let mut sequence = parse(input);
+//   compute(&mut sequence)
+// }
