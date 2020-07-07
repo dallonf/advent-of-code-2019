@@ -121,6 +121,8 @@ mod part_two {
     assert_eq!(intcode::compute(&mut program.clone(), Some(11)), Some(1001));
   }
 
-  // #[test]
-  // fn answer() {}
+  #[test]
+  fn answer() {
+    assert_eq!(get_diagnostic_code(5), 3892695);
+  }
 }
