@@ -13,10 +13,17 @@ mod part_one {
 
   #[test]
   fn input_output() {
-    let instruction = "3,0,4,0,99";
-    let mut code = intcode::parse(instruction);
+    let program = "3,0,4,0,99";
+    let mut code = intcode::parse(program);
     let result = intcode::compute(&mut code, Some(42));
     assert_eq!(result, Some(42));
+  }
+
+  #[test]
+  fn parameter_modes() {
+    let mut code = intcode::parse("1002,4,3,4,33");
+    intcode::compute(&mut code, None);
+    assert_eq!(code, vec![1002, 4, 3, 4, 99]);
   }
 
   #[test]
