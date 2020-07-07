@@ -37,7 +37,7 @@ mod part_one {
   fn run_single_instruction() {
     let program = "1,9,10,3,2,3,11,0,99,30,40,50";
     let mut sequence = intcode::parse(program);
-    let result = intcode::compute_instruction(&mut sequence, 0);
+    let result = intcode::compat::compute_instruction_v02(&mut sequence, 0);
     assert_eq!(result, intcode::ProgramState::Continue(4));
     assert_eq!(sequence[3], 70);
   }

@@ -5,6 +5,13 @@ pub fn compute_v02(sequence: &mut super::IntcodeSequence) -> usize {
   sequence[0]
 }
 
+pub fn compute_instruction_v02(
+  sequence: &mut super::IntcodeSequence,
+  instruction_pointer: usize,
+) -> super::ProgramState {
+  super::compute_instruction(sequence, instruction_pointer, None)
+}
+
 pub fn parse_and_compute_v02(input: &str) -> usize {
   let mut sequence = super::parse(input);
   compute_v02(&mut sequence)
