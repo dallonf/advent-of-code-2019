@@ -15,7 +15,8 @@ mod part_one {
   fn input_output() {
     let instruction = "3,0,4,0,99";
     let mut code = intcode::parse(instruction);
-    intcode::compute(&mut code, Some(42));
+    let result = intcode::compute(&mut code, Some(42));
+    assert_eq!(result, Some(42));
   }
 
   #[test]

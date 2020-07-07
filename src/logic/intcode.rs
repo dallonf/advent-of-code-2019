@@ -5,6 +5,7 @@ pub type IntcodeSequence = Vec<usize>;
 #[derive(Debug, PartialEq)]
 pub enum ProgramState {
   Continue(usize),
+  OutputAndContinue { pointer: usize, output: usize },
   Halt,
 }
 
@@ -15,6 +16,7 @@ pub fn parse(input: &str) -> IntcodeSequence {
 pub fn compute_instruction(
   sequence: &mut IntcodeSequence,
   instruction_pointer: usize,
+  input: Option<usize>,
 ) -> ProgramState {
   let instruction = sequence[instruction_pointer];
   match instruction {
@@ -44,6 +46,23 @@ pub fn compute_instruction(
 
       ProgramState::Continue(instruction_pointer + 4)
     }
+    3 => {
+      // Input
+      let destination_addr = sequence[instruction_pointer + 1];
+      sequence[destination_addr] = input.expect("Program expected input!");
+
+      ProgramState::Continue(instruction_pointer + 2)
+    }
+    4 => {
+      // Output
+      let source_addr = sequence[instruction_pointer + 1];
+      let value = sequence[source_addr];
+
+      ProgramState::OutputAndContinue {
+        pointer: instruction_pointer + 2,
+        output: value,
+      }
+    }
     99 => ProgramState::Halt,
     _ => {
       panic!(format!(
@@ -56,11 +75,19 @@ pub fn compute_instruction(
 
 pub fn compute(sequence: &mut IntcodeSequence, input: Option<usize>) -> Option<usize> {
   let mut instruction_pointer = 0;
+  let mut output: Option<usize> = None;
   loop {
-    let result = compute_instruction(sequence, instruction_pointer);
+    let result = compute_instruction(sequence, instruction_pointer, input);
     match result {
       ProgramState::Continue(new_position) => instruction_pointer = new_position,
-      ProgramState::Halt => return None,
+      ProgramState::OutputAndContinue {
+        pointer: new_position,
+        output: new_output,
+      } => {
+        output = Some(new_output);
+        instruction_pointer = new_position;
+      }
+      ProgramState::Halt => return output,
     }
   }
 }
