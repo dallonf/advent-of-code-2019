@@ -15,6 +15,7 @@ struct OrbitMapNodeData {
   orbiting_id: Option<String>,
   satellite_ids: HashSet<String>,
 }
+#[derive(Copy, Clone)]
 pub struct OrbitMapNode<'a> {
   map: &'a OrbitMap,
   data: &'a OrbitMapNodeData,
@@ -82,6 +83,42 @@ impl OrbitMap {
       .map(|x| x.count_orbits_recursively())
       .sum()
   }
+
+  pub fn minimum_distance(source: &OrbitMapNode, destination: &OrbitMapNode) -> usize {
+    // Walk all the way up from the destination to the root node,
+    // keeping track of how many transfers it takes to get to each one.
+    let destination_parents = {
+      let mut map: HashMap<String, usize> = HashMap::new();
+      fn walk_destination_parents(
+        map: &mut HashMap<String, usize>,
+        node: &OrbitMapNode,
+        transfers: usize,
+      ) {
+        map.insert(node.id().into(), transfers);
+        if let Some(orbiting) = node.get_orbiting() {
+          walk_destination_parents(map, &orbiting, transfers + 1);
+        }
+      };
+      walk_destination_parents(&mut map, destination, 0);
+      map
+    };
+
+    // Then walk up from the source until we find a common parent
+    fn walk_source_parents(
+      node: &OrbitMapNode,
+      transfers: usize,
+      destination_parents: &HashMap<String, usize>,
+    ) -> usize {
+      if let Some(common_parent_transfers) = destination_parents.get(node.id()) {
+        transfers + common_parent_transfers
+      } else {
+        let new_node = node.get_orbiting().unwrap();
+        walk_source_parents(&new_node, transfers + 1, destination_parents)
+      }
+    }
+
+    walk_source_parents(source, 0, &destination_parents)
+  }
 }
 
 impl OrbitMapNode<'_> {
@@ -132,7 +169,7 @@ mod part_one {
   use super::*;
 
   #[test]
-  fn test_cases() {
+  fn test_case() {
     let test_data: Vec<_> = "COM)B
 B)C
 C)D
@@ -158,11 +195,46 @@ K)L"
   }
 }
 
-// #[cfg(test)]
-// mod part_two {
-//   use super::*;
-//   #[test]
-//   fn test_cases() {}
-//   #[test]
-//   fn answer() {}
-// }
+#[cfg(test)]
+mod part_two {
+  use super::*;
+  #[test]
+  fn test_cases() {
+    let test_data: Vec<_> = "COM)B
+B)C
+C)D
+D)E
+E)F
+B)G
+G)H
+D)I
+E)J
+J)K
+K)L
+K)YOU
+I)SAN"
+      .lines()
+      .map(|x| x.into())
+      .collect();
+
+    let map = OrbitMap::new(&test_data);
+    assert_eq!(
+      OrbitMap::minimum_distance(
+        &map.get_node("YOU").unwrap().get_orbiting().unwrap(),
+        &map.get_node("SAN").unwrap().get_orbiting().unwrap()
+      ),
+      4
+    );
+  }
+  #[test]
+  fn answer() {
+    let map = OrbitMap::new(&PUZZLE_INPUT);
+    assert_eq!(
+      OrbitMap::minimum_distance(
+        &map.get_node("YOU").unwrap().get_orbiting().unwrap(),
+        &map.get_node("SAN").unwrap().get_orbiting().unwrap()
+      ),
+      322
+    );
+  }
+}
