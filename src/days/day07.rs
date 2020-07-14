@@ -38,8 +38,41 @@ pub fn compute_thruster_signal(
   signal
 }
 
+pub fn get_highest_phase_settings(
+  sequence: &intcode::IntcodeSequence,
+  phase_settings_options: &[u8],
+) -> isize {
+  phase_settings_options
+    .par_iter()
+    .cloned()
+    .flat_map(move |i1| {
+      phase_settings_options
+        .par_iter()
+        .cloned()
+        .flat_map(move |i2| {
+          phase_settings_options
+            .par_iter()
+            .cloned()
+            .flat_map(move |i3| {
+              phase_settings_options
+                .par_iter()
+                .cloned()
+                .flat_map(move |i4| {
+                  phase_settings_options
+                    .par_iter()
+                    .cloned()
+                    .map(move |i5| [i1, i2, i3, i4, i5])
+                })
+            })
+        })
+    })
+    .map(|phase_settings| compute_thruster_signal(&sequence, &phase_settings))
+    .max()
+    .unwrap()
+}
+
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("07");
+  static ref PUZZLE_INPUT: String = puzzle_input::string_for_day("07");
 }
 
 #[cfg(test)]
@@ -75,8 +108,13 @@ mod part_one {
       65210
     );
   }
-  // #[test]
-  // fn answer() {}
+  #[test]
+  fn answer() {
+    let sequence = intcode::IntcodeSequence::parse(&PUZZLE_INPUT);
+    let result = get_highest_phase_settings(&sequence, &(0..5).collect::<Vec<_>>());
+    assert!(result < 4968420);
+    // assert_eq!(result, 0);
+  }
 }
 
 // #[cfg(test)]
