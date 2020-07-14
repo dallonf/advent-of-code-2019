@@ -22,7 +22,7 @@ pub fn parse_and_compute_v02(input: &str) -> usize {
 pub fn compute_v05(sequence: &mut super::IntcodeSequence, input: Option<isize>) -> Option<isize> {
   let mut input = input;
   let mut output: Option<isize> = None;
-  let computer = super::IntcodeComputer::new(sequence.clone());
+  let computer = super::IntcodeComputer::new(sequence);
   let mut computer = computer.start();
   loop {
     match computer {
@@ -37,8 +37,7 @@ pub fn compute_v05(sequence: &mut super::IntcodeSequence, input: Option<isize>) 
         output = Some(state.output);
         computer = state.execute();
       }
-      super::IntcodeComputer::Halt(state) => {
-        *sequence = state.state.sequence;
+      super::IntcodeComputer::Halt(_) => {
         return output;
       }
     }

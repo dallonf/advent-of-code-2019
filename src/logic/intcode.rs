@@ -28,33 +28,32 @@ impl Unsign for isize {
   }
 }
 
-pub struct IntcodeComputerState {
-  pub sequence: IntcodeSequence,
+pub struct IntcodeComputerState<'a> {
+  pub sequence: &'a mut IntcodeSequence,
   pointer: usize,
 }
-impl IntcodeComputerState {}
 
-pub struct IntcodeComputerStart {
-  pub state: IntcodeComputerState,
+pub struct IntcodeComputerStart<'a> {
+  pub state: IntcodeComputerState<'a>,
 }
-pub struct IntcodeComputerInputState {
-  pub state: IntcodeComputerState,
+pub struct IntcodeComputerInputState<'a> {
+  pub state: IntcodeComputerState<'a>,
 }
-pub struct IntcodeComputerOutputState {
-  pub state: IntcodeComputerState,
+pub struct IntcodeComputerOutputState<'a> {
+  pub state: IntcodeComputerState<'a>,
   pub output: isize,
 }
-pub struct IntcodeComputerHaltState {
-  pub state: IntcodeComputerState,
+pub struct IntcodeComputerHaltState<'a> {
+  pub state: IntcodeComputerState<'a>,
 }
 
-pub enum IntcodeComputer {
-  Input(IntcodeComputerInputState),
-  Output(IntcodeComputerOutputState),
-  Halt(IntcodeComputerHaltState),
+pub enum IntcodeComputer<'a> {
+  Input(IntcodeComputerInputState<'a>),
+  Output(IntcodeComputerOutputState<'a>),
+  Halt(IntcodeComputerHaltState<'a>),
 }
-impl IntcodeComputer {
-  pub fn new(sequence: IntcodeSequence) -> IntcodeComputerStart {
+impl IntcodeComputer<'_> {
+  pub fn new(sequence: &mut IntcodeSequence) -> IntcodeComputerStart {
     IntcodeComputerStart {
       state: IntcodeComputerState {
         sequence,
@@ -63,10 +62,10 @@ impl IntcodeComputer {
     }
   }
 }
-impl IntcodeComputerState {
-  fn compute(mut self) -> IntcodeComputer {
+impl<'a> IntcodeComputerState<'a> {
+  fn compute(mut self) -> IntcodeComputer<'a> {
     loop {
-      let result = compute_instruction(&mut self.sequence, self.pointer);
+      let result = compute_instruction(self.sequence, self.pointer);
       match result {
         ProgramState::Continue(new_position) => {
           self.pointer = new_position;
@@ -91,13 +90,13 @@ impl IntcodeComputerState {
     }
   }
 }
-impl IntcodeComputerStart {
-  pub fn start(self) -> IntcodeComputer {
+impl<'a> IntcodeComputerStart<'a> {
+  pub fn start(self) -> IntcodeComputer<'a> {
     self.state.compute()
   }
 }
-impl IntcodeComputerInputState {
-  pub fn execute(mut self, input: isize) -> IntcodeComputer {
+impl<'a> IntcodeComputerInputState<'a> {
+  pub fn execute(mut self, input: isize) -> IntcodeComputer<'a> {
     let instruction = parse_instruction(&self.state.sequence, self.state.pointer, 1);
     let destination_addr = instruction.raw_parameters[0];
     self.state.sequence.set(destination_addr, input);
@@ -105,8 +104,8 @@ impl IntcodeComputerInputState {
     self.state.compute()
   }
 }
-impl IntcodeComputerOutputState {
-  pub fn execute(self) -> IntcodeComputer {
+impl<'a> IntcodeComputerOutputState<'a> {
+  pub fn execute(self) -> IntcodeComputer<'a> {
     self.state.compute()
   }
 }
