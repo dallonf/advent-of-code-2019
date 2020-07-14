@@ -1,8 +1,9 @@
 // Day 7: Amplification Circuit
 
 use crate::logic::intcode;
-
+use crate::logic::intcode::IntcodeSequenceUtils;
 use crate::prelude::*;
+use std::cell::Cell;
 
 pub type PhaseSettingSequence = [u8; 5];
 
@@ -40,9 +41,9 @@ pub fn compute_thruster_signal(
 
 fn get_all_phase_setting_combinations(
   options: &[u8],
-) -> impl std::iter::Iterator<Item = [u8; 5]> + '_ {
+) -> impl std::iter::Iterator<Item = PhaseSettingSequence> + '_ {
   options.iter().flat_map(move |i1| {
-    let remaining: Vec<_> = options.iter().filter(move |x| *x != i1).collect();
+    let remaining = options.iter().filter(move |x| *x != i1);
     remaining.clone().into_iter().flat_map(move |i2| {
       let remaining = remaining.clone().into_iter().filter(move |x| *x != i2);
       remaining.clone().into_iter().flat_map(move |i3| {
@@ -65,6 +66,51 @@ pub fn get_highest_phase_settings(
     .map(|phase_settings| compute_thruster_signal(&sequence, &phase_settings))
     .max()
     .unwrap()
+}
+
+pub fn compute_thruster_signal_feedback(
+  sequence: &intcode::IntcodeSequence,
+  phase_settings: &PhaseSettingSequence,
+) -> isize {
+  let mut computer_memory: Vec<_> = phase_settings
+    .iter()
+    .map(|x| (sequence.clone(), x))
+    .collect();
+  let computers: Vec<_> = computer_memory
+    .iter_mut()
+    .map(|(memory, phase_setting)| {
+      let computer = memory
+        .start()
+        .as_input()
+        .expect("Expected computer to take phase setting input")
+        .execute(isize::from(**phase_setting));
+      Cell::new(Some(computer))
+    })
+    .collect();
+
+  let mut signal = 0;
+  loop {
+    for computer_cell in computers.iter() {
+      let computer = computer_cell.take().expect("Expected computer to exist!");
+      match computer {
+        intcode::IntcodeComputer::Input(state) => {
+          let new_computer = state.execute(signal);
+          let new_computer = new_computer
+            .as_output()
+            .expect("Expected computer to give output");
+          signal = new_computer.output;
+          computer_cell.set(Some(new_computer.execute()));
+        }
+        intcode::IntcodeComputer::Halt(_) => {
+          return signal;
+        }
+        state => panic!(
+          "Unexpected computer state (expected to take input or halt): {:?}",
+          state
+        ),
+      }
+    }
+  }
 }
 
 lazy_static! {
@@ -119,11 +165,32 @@ mod part_one {
   }
 }
 
-// #[cfg(test)]
-// mod part_two {
-//   use super::*;
-//   #[test]
-//   fn test_cases() {}
-//   #[test]
-//   fn answer() {}
-// }
+#[cfg(test)]
+mod part_two {
+  use super::*;
+  use crate::logic::intcode::IntcodeSequenceUtils;
+
+  #[test]
+  fn test_cases() {
+    assert_eq!(
+      compute_thruster_signal_feedback(
+        &intcode::IntcodeSequence::parse(
+          "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5"
+        ),
+        &[9, 8, 7, 6, 5],
+      ),
+      139629729
+    );
+    assert_eq!(
+      compute_thruster_signal_feedback(
+        &intcode::IntcodeSequence::parse(
+          "3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10"
+        ),
+        &[9,7,8,5,6],
+      ),
+      18216
+    );
+  }
+  //   #[test]
+  //   fn answer() {}
+}
