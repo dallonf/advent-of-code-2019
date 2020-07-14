@@ -1,3 +1,4 @@
+use super::IntcodeComputerState;
 use std::convert::TryInto;
 
 /// Computes as defined in Day 02. No support for input/output;
@@ -22,7 +23,7 @@ pub fn parse_and_compute_v02(input: &str) -> usize {
 pub fn compute_v05(sequence: &mut super::IntcodeSequence, input: Option<isize>) -> Option<isize> {
   let mut input = input;
   let mut output: Option<isize> = None;
-  let computer = super::IntcodeComputer::new(sequence);
+  let computer = super::IntcodeComputer::new(sequence.clone());
   let mut computer = computer.start();
   loop {
     match computer {
@@ -37,7 +38,8 @@ pub fn compute_v05(sequence: &mut super::IntcodeSequence, input: Option<isize>) 
         output = Some(state.output);
         computer = state.execute();
       }
-      super::IntcodeComputer::Halt(_) => {
+      super::IntcodeComputer::Halt(state) => {
+        *sequence = state.borrow_memory().clone();
         return output;
       }
     }
