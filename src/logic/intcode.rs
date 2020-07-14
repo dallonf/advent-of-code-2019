@@ -28,9 +28,93 @@ impl Unsign for isize {
   }
 }
 
+pub struct IntcodeComputerState {
+  pub sequence: IntcodeSequence,
+  pointer: usize,
+}
+impl IntcodeComputerState {}
+
+pub struct IntcodeComputerStart {
+  pub state: IntcodeComputerState,
+}
+pub struct IntcodeComputerInputState {
+  pub state: IntcodeComputerState,
+}
+pub struct IntcodeComputerOutputState {
+  pub state: IntcodeComputerState,
+  pub output: isize,
+}
+pub struct IntcodeComputerHaltState {
+  pub state: IntcodeComputerState,
+}
+
+pub enum IntcodeComputer {
+  Input(IntcodeComputerInputState),
+  Output(IntcodeComputerOutputState),
+  Halt(IntcodeComputerHaltState),
+}
+impl IntcodeComputer {
+  pub fn new(sequence: IntcodeSequence) -> IntcodeComputerStart {
+    IntcodeComputerStart {
+      state: IntcodeComputerState {
+        sequence,
+        pointer: 0,
+      },
+    }
+  }
+}
+impl IntcodeComputerState {
+  fn compute(mut self) -> IntcodeComputer {
+    loop {
+      let result = compute_instruction(&mut self.sequence, self.pointer);
+      match result {
+        ProgramState::Continue(new_position) => {
+          self.pointer = new_position;
+        }
+        ProgramState::OutputAndContinue {
+          pointer: new_position,
+          output,
+        } => {
+          self.pointer = new_position;
+          return IntcodeComputer::Output(IntcodeComputerOutputState {
+            state: self,
+            output,
+          });
+        }
+        ProgramState::WaitForInput => {
+          return IntcodeComputer::Input(IntcodeComputerInputState { state: self });
+        }
+        ProgramState::Halt => {
+          return IntcodeComputer::Halt(IntcodeComputerHaltState { state: self })
+        }
+      }
+    }
+  }
+}
+impl IntcodeComputerStart {
+  pub fn start(self) -> IntcodeComputer {
+    self.state.compute()
+  }
+}
+impl IntcodeComputerInputState {
+  pub fn execute(mut self, input: isize) -> IntcodeComputer {
+    let instruction = parse_instruction(&self.state.sequence, self.state.pointer, 1);
+    let destination_addr = instruction.raw_parameters[0];
+    self.state.sequence.set(destination_addr, input);
+    self.state.pointer = instruction.next_pointer;
+    self.state.compute()
+  }
+}
+impl IntcodeComputerOutputState {
+  pub fn execute(self) -> IntcodeComputer {
+    self.state.compute()
+  }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum ProgramState {
   Continue(usize),
+  WaitForInput,
   OutputAndContinue { pointer: usize, output: isize },
   Halt,
 }
@@ -42,7 +126,6 @@ pub fn parse(input: &str) -> IntcodeSequence {
 pub fn compute_instruction(
   sequence: &mut IntcodeSequence,
   instruction_pointer: usize,
-  input: Option<isize>,
 ) -> ProgramState {
   let instruction = sequence[instruction_pointer];
   let opcode = instruction % 100;
@@ -65,10 +148,7 @@ pub fn compute_instruction(
     }
     3 => {
       // Input
-      let instruction = parse_instruction(&sequence, instruction_pointer, 1);
-      let destination_addr = instruction.raw_parameters[0];
-      sequence.set(destination_addr, input.expect("Program expected input!"));
-      ProgramState::Continue(instruction.next_pointer)
+      ProgramState::WaitForInput
     }
     4 => {
       // Output
@@ -132,36 +212,12 @@ pub fn compute_instruction(
   }
 }
 
-pub fn compute(sequence: &mut IntcodeSequence, input: Option<isize>) -> Option<isize> {
-  let mut instruction_pointer = 0;
-  let mut output: Option<isize> = None;
-  loop {
-    let result = compute_instruction(sequence, instruction_pointer, input);
-    match result {
-      ProgramState::Continue(new_position) => instruction_pointer = new_position,
-      ProgramState::OutputAndContinue {
-        pointer: new_position,
-        output: new_output,
-      } => {
-        output = Some(new_output);
-        instruction_pointer = new_position;
-      }
-      ProgramState::Halt => return output,
-    }
-  }
-}
-
 #[derive(Debug, PartialEq, Eq)]
 struct InstructionParameters {
   raw_parameters: Vec<isize>,
   parameter_modes: Vec<u8>,
   parameters: Vec<isize>,
   next_pointer: usize,
-}
-
-pub fn parse_and_compute(code: &str, input: Option<isize>) -> Option<isize> {
-  let mut sequence = parse(code);
-  compute(&mut sequence, input)
 }
 
 fn parse_instruction(

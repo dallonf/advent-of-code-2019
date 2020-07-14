@@ -1,9 +1,9 @@
-// Day NN: Description
+// Day 7: Amplification Circuit
 
 use crate::prelude::*;
 
 lazy_static! {
-  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("NN");
+  static ref PUZZLE_INPUT: Vec<String> = puzzle_input::lines_for_day("07");
 }
 
 #[cfg(test)]
