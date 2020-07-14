@@ -60,6 +60,38 @@ pub struct IntcodeComputerInternalState {
   sequence: IntcodeSequence,
   pointer: usize,
 }
+impl IntcodeComputerInternalState {
+  fn compute(mut self) -> IntcodeComputer {
+    loop {
+      let result = compute_instruction(&mut self.sequence, self.pointer);
+      match result {
+        ProgramState::Continue(new_position) => {
+          self.pointer = new_position;
+        }
+        ProgramState::OutputAndContinue {
+          pointer: new_position,
+          output,
+        } => {
+          self.pointer = new_position;
+          return IntcodeComputer::Output(IntcodeComputerOutputState {
+            internal_state: self,
+            output,
+          });
+        }
+        ProgramState::WaitForInput => {
+          return IntcodeComputer::Input(IntcodeComputerInputState {
+            internal_state: self,
+          });
+        }
+        ProgramState::Halt => {
+          return IntcodeComputer::Halt(IntcodeComputerHaltState {
+            internal_state: self,
+          })
+        }
+      }
+    }
+  }
+}
 impl IntcodeComputerState for IntcodeComputerInternalState {
   fn get_internal_state(&self) -> &IntcodeComputerInternalState {
     self
@@ -68,31 +100,6 @@ impl IntcodeComputerState for IntcodeComputerInternalState {
     self
   }
 }
-
-#[derive(Debug)]
-pub struct IntcodeComputerStart {
-  internal_state: IntcodeComputerInternalState,
-}
-impl_intcode_computer_state!(IntcodeComputerStart);
-
-#[derive(Debug)]
-pub struct IntcodeComputerInputState {
-  internal_state: IntcodeComputerInternalState,
-}
-impl_intcode_computer_state!(IntcodeComputerInputState);
-
-#[derive(Debug)]
-pub struct IntcodeComputerOutputState {
-  internal_state: IntcodeComputerInternalState,
-  pub output: isize,
-}
-impl_intcode_computer_state!(IntcodeComputerOutputState);
-
-#[derive(Debug)]
-pub struct IntcodeComputerHaltState {
-  internal_state: IntcodeComputerInternalState,
-}
-impl_intcode_computer_state!(IntcodeComputerHaltState);
 
 #[derive(Debug)]
 pub enum IntcodeComputer {
@@ -159,43 +166,24 @@ impl IntcodeComputerState for IntcodeComputer {
   }
 }
 
-impl IntcodeComputerInternalState {
-  fn compute(mut self) -> IntcodeComputer {
-    loop {
-      let result = compute_instruction(&mut self.sequence, self.pointer);
-      match result {
-        ProgramState::Continue(new_position) => {
-          self.pointer = new_position;
-        }
-        ProgramState::OutputAndContinue {
-          pointer: new_position,
-          output,
-        } => {
-          self.pointer = new_position;
-          return IntcodeComputer::Output(IntcodeComputerOutputState {
-            internal_state: self,
-            output,
-          });
-        }
-        ProgramState::WaitForInput => {
-          return IntcodeComputer::Input(IntcodeComputerInputState {
-            internal_state: self,
-          });
-        }
-        ProgramState::Halt => {
-          return IntcodeComputer::Halt(IntcodeComputerHaltState {
-            internal_state: self,
-          })
-        }
-      }
-    }
-  }
+#[derive(Debug)]
+pub struct IntcodeComputerStart {
+  internal_state: IntcodeComputerInternalState,
 }
+impl_intcode_computer_state!(IntcodeComputerStart);
+
 impl IntcodeComputerStart {
   pub fn start(self) -> IntcodeComputer {
     self.internal_state.compute()
   }
 }
+
+#[derive(Debug)]
+pub struct IntcodeComputerInputState {
+  internal_state: IntcodeComputerInternalState,
+}
+impl_intcode_computer_state!(IntcodeComputerInputState);
+
 impl IntcodeComputerInputState {
   pub fn execute(mut self, input: isize) -> IntcodeComputer {
     let instruction = parse_instruction(
@@ -209,11 +197,25 @@ impl IntcodeComputerInputState {
     self.internal_state.compute()
   }
 }
+
+#[derive(Debug)]
+pub struct IntcodeComputerOutputState {
+  internal_state: IntcodeComputerInternalState,
+  pub output: isize,
+}
+impl_intcode_computer_state!(IntcodeComputerOutputState);
+
 impl IntcodeComputerOutputState {
   pub fn execute(self) -> IntcodeComputer {
     self.internal_state.compute()
   }
 }
+
+#[derive(Debug)]
+pub struct IntcodeComputerHaltState {
+  internal_state: IntcodeComputerInternalState,
+}
+impl_intcode_computer_state!(IntcodeComputerHaltState);
 
 #[derive(Debug, PartialEq)]
 pub enum ProgramState {
