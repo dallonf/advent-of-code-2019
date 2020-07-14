@@ -1,7 +1,7 @@
 // Day 7: Amplification Circuit
 
 use crate::logic::intcode;
-use crate::logic::intcode::IntcodeSequenceUtils;
+
 use crate::prelude::*;
 use std::cell::Cell;
 
@@ -13,8 +13,7 @@ pub fn compute_thruster_signal(
 ) -> isize {
   let mut signal = 0;
   for phase_setting in phase_settings.iter().cloned() {
-    let mut copy_memory = sequence.clone();
-    let computer = intcode::IntcodeComputer::new(&mut copy_memory).start();
+    let computer = intcode::IntcodeComputer::new(sequence.clone()).start();
     let computer = computer
       .as_input()
       .expect("Expected computer to take phase setting input")
@@ -72,18 +71,14 @@ pub fn compute_thruster_signal_feedback(
   sequence: &intcode::IntcodeSequence,
   phase_settings: &PhaseSettingSequence,
 ) -> isize {
-  let mut computer_memory: Vec<_> = phase_settings
+  let computers: Vec<_> = phase_settings
     .iter()
-    .map(|x| (sequence.clone(), x))
-    .collect();
-  let computers: Vec<_> = computer_memory
-    .iter_mut()
-    .map(|(memory, phase_setting)| {
-      let computer = memory
+    .map(|phase_setting| {
+      let computer = intcode::IntcodeComputer::new(sequence.clone())
         .start()
         .as_input()
         .expect("Expected computer to take phase setting input")
-        .execute(isize::from(**phase_setting));
+        .execute(isize::from(*phase_setting));
       Cell::new(Some(computer))
     })
     .collect();
@@ -131,29 +126,26 @@ lazy_static! {
 #[cfg(test)]
 mod part_one {
   use super::*;
-  use crate::logic::intcode::IntcodeSequenceUtils;
 
   #[test]
   fn test_cases() {
     assert_eq!(
       compute_thruster_signal(
-        &intcode::IntcodeSequence::parse("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0"),
+        &intcode::parse("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0"),
         &[4, 3, 2, 1, 0],
       ),
       43210
     );
     assert_eq!(
       compute_thruster_signal(
-        &intcode::IntcodeSequence::parse(
-          "3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0"
-        ),
+        &intcode::parse("3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0"),
         &[0, 1, 2, 3, 4],
       ),
       54321
     );
     assert_eq!(
       compute_thruster_signal(
-        &intcode::IntcodeSequence::parse(
+        &intcode::parse(
           "3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0"
         ),
         &[1, 0, 4, 3, 2],
@@ -170,7 +162,7 @@ mod part_one {
 
   #[test]
   fn answer() {
-    let sequence = intcode::IntcodeSequence::parse(&PUZZLE_INPUT);
+    let sequence = intcode::parse(&PUZZLE_INPUT);
     let result = get_highest_phase_settings(&sequence, &(0..5).collect::<Vec<_>>());
     assert_eq!(result, 77500);
   }
@@ -179,13 +171,12 @@ mod part_one {
 #[cfg(test)]
 mod part_two {
   use super::*;
-  use crate::logic::intcode::IntcodeSequenceUtils;
 
   #[test]
   fn test_cases() {
     assert_eq!(
       compute_thruster_signal_feedback(
-        &intcode::IntcodeSequence::parse(
+        &intcode::parse(
           "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5"
         ),
         &[9, 8, 7, 6, 5],
@@ -194,7 +185,7 @@ mod part_two {
     );
     assert_eq!(
       compute_thruster_signal_feedback(
-        &intcode::IntcodeSequence::parse(
+        &intcode::parse(
           "3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10"
         ),
         &[9,7,8,5,6],
@@ -204,7 +195,7 @@ mod part_two {
   }
   #[test]
   fn answer() {
-    let sequence = intcode::IntcodeSequence::parse(&PUZZLE_INPUT);
+    let sequence = intcode::parse(&PUZZLE_INPUT);
     let result = get_highest_feedback_phase_settings(&sequence, &(5..10).collect::<Vec<_>>());
     assert_eq!(result, 22476942);
   }

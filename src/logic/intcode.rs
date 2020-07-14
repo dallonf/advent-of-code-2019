@@ -3,18 +3,6 @@ use std::convert::{TryFrom, TryInto};
 pub mod compat;
 
 pub type IntcodeSequence = Vec<isize>;
-pub trait IntcodeSequenceUtils {
-  fn parse(input: &str) -> IntcodeSequence;
-  fn start(&mut self) -> IntcodeComputer;
-}
-impl IntcodeSequenceUtils for IntcodeSequence {
-  fn parse(input: &str) -> IntcodeSequence {
-    parse(input)
-  }
-  fn start(&mut self) -> IntcodeComputer<'_> {
-    IntcodeComputer::new(self).start()
-  }
-}
 
 trait IntcodeIndexable {
   fn index(&self, i: isize) -> isize;
@@ -41,50 +29,112 @@ impl Unsign for isize {
   }
 }
 
+pub trait IntcodeComputerState {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState;
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState;
+  fn borrow_memory(&self) -> &IntcodeSequence {
+    &self.get_internal_state().sequence
+  }
+  fn borrow_memory_mut(&mut self) -> &mut IntcodeSequence {
+    &mut self.get_internal_state_mut().sequence
+  }
+  fn get_pointer(&self) -> usize {
+    self.get_internal_state().pointer
+  }
+}
+
 #[derive(Debug)]
-pub struct IntcodeComputerState<'a> {
-  pub sequence: &'a mut IntcodeSequence,
+pub struct IntcodeComputerInternalState {
+  sequence: IntcodeSequence,
   pointer: usize,
 }
+impl IntcodeComputerState for IntcodeComputerInternalState {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    self
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    self
+  }
+}
 
 #[derive(Debug)]
-pub struct IntcodeComputerStart<'a> {
-  pub state: IntcodeComputerState<'a>,
+pub struct IntcodeComputerStart {
+  internal_state: IntcodeComputerInternalState,
 }
-#[derive(Debug)]
-pub struct IntcodeComputerInputState<'a> {
-  pub state: IntcodeComputerState<'a>,
+impl IntcodeComputerState for IntcodeComputerStart {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    &self.internal_state
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    &mut self.internal_state
+  }
 }
+
 #[derive(Debug)]
-pub struct IntcodeComputerOutputState<'a> {
-  pub state: IntcodeComputerState<'a>,
+pub struct IntcodeComputerInputState {
+  internal_state: IntcodeComputerInternalState,
+}
+impl IntcodeComputerState for IntcodeComputerInputState {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    &self.internal_state
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    &mut self.internal_state
+  }
+}
+
+#[derive(Debug)]
+pub struct IntcodeComputerOutputState {
+  internal_state: IntcodeComputerInternalState,
   pub output: isize,
 }
-#[derive(Debug)]
-pub struct IntcodeComputerHaltState<'a> {
-  pub state: IntcodeComputerState<'a>,
+impl IntcodeComputerState for IntcodeComputerOutputState {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    &self.internal_state
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    &mut self.internal_state
+  }
 }
 
 #[derive(Debug)]
-pub enum IntcodeComputer<'a> {
-  Input(IntcodeComputerInputState<'a>),
-  Output(IntcodeComputerOutputState<'a>),
-  Halt(IntcodeComputerHaltState<'a>),
+pub struct IntcodeComputerHaltState {
+  internal_state: IntcodeComputerInternalState,
+}
+impl IntcodeComputerState for IntcodeComputerHaltState {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    &self.internal_state
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    &mut self.internal_state
+  }
+}
+
+#[derive(Debug)]
+pub enum IntcodeComputer {
+  Input(IntcodeComputerInputState),
+  Output(IntcodeComputerOutputState),
+  Halt(IntcodeComputerHaltState),
 }
 #[derive(Debug)]
-pub struct WrongTypeError<'a>(IntcodeComputer<'a>);
+pub struct WrongTypeError(IntcodeComputer);
 
-impl<'a> IntcodeComputer<'a> {
-  pub fn new(sequence: &mut IntcodeSequence) -> IntcodeComputerStart {
+impl IntcodeComputer {
+  pub fn new(sequence: IntcodeSequence) -> IntcodeComputerStart {
     IntcodeComputerStart {
-      state: IntcodeComputerState {
+      internal_state: IntcodeComputerInternalState {
         sequence,
         pointer: 0,
       },
     }
   }
 
-  pub fn as_input(self) -> Result<IntcodeComputerInputState<'a>, WrongTypeError<'a>> {
+  pub fn parse(str: &str) -> IntcodeComputerStart {
+    let sequence = parse(str);
+    Self::new(sequence)
+  }
+
+  pub fn as_input(self) -> Result<IntcodeComputerInputState, WrongTypeError> {
     if let IntcodeComputer::Input(state) = self {
       Ok(state)
     } else {
@@ -92,7 +142,7 @@ impl<'a> IntcodeComputer<'a> {
     }
   }
 
-  pub fn as_output(self) -> Result<IntcodeComputerOutputState<'a>, WrongTypeError<'a>> {
+  pub fn as_output(self) -> Result<IntcodeComputerOutputState, WrongTypeError> {
     if let IntcodeComputer::Output(state) = self {
       Ok(state)
     } else {
@@ -100,7 +150,7 @@ impl<'a> IntcodeComputer<'a> {
     }
   }
 
-  pub fn as_halt(self) -> Result<IntcodeComputerHaltState<'a>, WrongTypeError<'a>> {
+  pub fn as_halt(self) -> Result<IntcodeComputerHaltState, WrongTypeError> {
     if let IntcodeComputer::Halt(state) = self {
       Ok(state)
     } else {
@@ -108,10 +158,27 @@ impl<'a> IntcodeComputer<'a> {
     }
   }
 }
-impl<'a> IntcodeComputerState<'a> {
-  fn compute(mut self) -> IntcodeComputer<'a> {
+impl IntcodeComputerState for IntcodeComputer {
+  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+    match self {
+      IntcodeComputer::Input(state) => state.get_internal_state(),
+      IntcodeComputer::Output(state) => state.get_internal_state(),
+      IntcodeComputer::Halt(state) => state.get_internal_state(),
+    }
+  }
+  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+    match self {
+      IntcodeComputer::Input(state) => state.get_internal_state_mut(),
+      IntcodeComputer::Output(state) => state.get_internal_state_mut(),
+      IntcodeComputer::Halt(state) => state.get_internal_state_mut(),
+    }
+  }
+}
+
+impl IntcodeComputerInternalState {
+  fn compute(mut self) -> IntcodeComputer {
     loop {
-      let result = compute_instruction(self.sequence, self.pointer);
+      let result = compute_instruction(&mut self.sequence, self.pointer);
       match result {
         ProgramState::Continue(new_position) => {
           self.pointer = new_position;
@@ -122,37 +189,45 @@ impl<'a> IntcodeComputerState<'a> {
         } => {
           self.pointer = new_position;
           return IntcodeComputer::Output(IntcodeComputerOutputState {
-            state: self,
+            internal_state: self,
             output,
           });
         }
         ProgramState::WaitForInput => {
-          return IntcodeComputer::Input(IntcodeComputerInputState { state: self });
+          return IntcodeComputer::Input(IntcodeComputerInputState {
+            internal_state: self,
+          });
         }
         ProgramState::Halt => {
-          return IntcodeComputer::Halt(IntcodeComputerHaltState { state: self })
+          return IntcodeComputer::Halt(IntcodeComputerHaltState {
+            internal_state: self,
+          })
         }
       }
     }
   }
 }
-impl<'a> IntcodeComputerStart<'a> {
-  pub fn start(self) -> IntcodeComputer<'a> {
-    self.state.compute()
+impl IntcodeComputerStart {
+  pub fn start(self) -> IntcodeComputer {
+    self.internal_state.compute()
   }
 }
-impl<'a> IntcodeComputerInputState<'a> {
-  pub fn execute(mut self, input: isize) -> IntcodeComputer<'a> {
-    let instruction = parse_instruction(&self.state.sequence, self.state.pointer, 1);
+impl IntcodeComputerInputState {
+  pub fn execute(mut self, input: isize) -> IntcodeComputer {
+    let instruction = parse_instruction(
+      &self.internal_state.sequence,
+      self.internal_state.pointer,
+      1,
+    );
     let destination_addr = instruction.raw_parameters[0];
-    self.state.sequence.set(destination_addr, input);
-    self.state.pointer = instruction.next_pointer;
-    self.state.compute()
+    self.internal_state.sequence.set(destination_addr, input);
+    self.internal_state.pointer = instruction.next_pointer;
+    self.internal_state.compute()
   }
 }
-impl<'a> IntcodeComputerOutputState<'a> {
-  pub fn execute(self) -> IntcodeComputer<'a> {
-    self.state.compute()
+impl IntcodeComputerOutputState {
+  pub fn execute(self) -> IntcodeComputer {
+    self.internal_state.compute()
   }
 }
 
