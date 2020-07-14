@@ -113,6 +113,17 @@ pub fn compute_thruster_signal_feedback(
   }
 }
 
+pub fn get_highest_feedback_phase_settings(
+  sequence: &intcode::IntcodeSequence,
+  phase_settings_options: &[u8],
+) -> isize {
+  get_all_phase_setting_combinations(phase_settings_options)
+    .par_bridge()
+    .map(|phase_settings| compute_thruster_signal_feedback(&sequence, &phase_settings))
+    .max()
+    .unwrap()
+}
+
 lazy_static! {
   static ref PUZZLE_INPUT: String = puzzle_input::string_for_day("07");
 }
@@ -191,6 +202,10 @@ mod part_two {
       18216
     );
   }
-  //   #[test]
-  //   fn answer() {}
+  #[test]
+  fn answer() {
+    let sequence = intcode::IntcodeSequence::parse(&PUZZLE_INPUT);
+    let result = get_highest_feedback_phase_settings(&sequence, &(5..10).collect::<Vec<_>>());
+    assert_eq!(result, 22476942);
+  }
 }
