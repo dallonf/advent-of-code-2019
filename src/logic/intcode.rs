@@ -42,6 +42,18 @@ pub trait IntcodeComputerState {
     self.get_internal_state().pointer
   }
 }
+macro_rules! impl_intcode_computer_state {
+  (  $x:ident ) => {
+    impl IntcodeComputerState for $x {
+      fn get_internal_state(&self) -> &IntcodeComputerInternalState {
+        &self.internal_state
+      }
+      fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
+        &mut self.internal_state
+      }
+    }
+  };
+}
 
 #[derive(Debug)]
 pub struct IntcodeComputerInternalState {
@@ -61,54 +73,26 @@ impl IntcodeComputerState for IntcodeComputerInternalState {
 pub struct IntcodeComputerStart {
   internal_state: IntcodeComputerInternalState,
 }
-impl IntcodeComputerState for IntcodeComputerStart {
-  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
-    &self.internal_state
-  }
-  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
-    &mut self.internal_state
-  }
-}
+impl_intcode_computer_state!(IntcodeComputerStart);
 
 #[derive(Debug)]
 pub struct IntcodeComputerInputState {
   internal_state: IntcodeComputerInternalState,
 }
-impl IntcodeComputerState for IntcodeComputerInputState {
-  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
-    &self.internal_state
-  }
-  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
-    &mut self.internal_state
-  }
-}
+impl_intcode_computer_state!(IntcodeComputerInputState);
 
 #[derive(Debug)]
 pub struct IntcodeComputerOutputState {
   internal_state: IntcodeComputerInternalState,
   pub output: isize,
 }
-impl IntcodeComputerState for IntcodeComputerOutputState {
-  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
-    &self.internal_state
-  }
-  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
-    &mut self.internal_state
-  }
-}
+impl_intcode_computer_state!(IntcodeComputerOutputState);
 
 #[derive(Debug)]
 pub struct IntcodeComputerHaltState {
   internal_state: IntcodeComputerInternalState,
 }
-impl IntcodeComputerState for IntcodeComputerHaltState {
-  fn get_internal_state(&self) -> &IntcodeComputerInternalState {
-    &self.internal_state
-  }
-  fn get_internal_state_mut(&mut self) -> &mut IntcodeComputerInternalState {
-    &mut self.internal_state
-  }
-}
+impl_intcode_computer_state!(IntcodeComputerHaltState);
 
 #[derive(Debug)]
 pub enum IntcodeComputer {
