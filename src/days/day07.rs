@@ -38,34 +38,30 @@ pub fn compute_thruster_signal(
   signal
 }
 
+fn get_all_phase_setting_combinations(
+  options: &[u8],
+) -> impl std::iter::Iterator<Item = [u8; 5]> + '_ {
+  options.iter().flat_map(move |i1| {
+    let remaining: Vec<_> = options.iter().filter(move |x| *x != i1).collect();
+    remaining.clone().into_iter().flat_map(move |i2| {
+      let remaining = remaining.clone().into_iter().filter(move |x| *x != i2);
+      remaining.clone().into_iter().flat_map(move |i3| {
+        let remaining = remaining.clone().into_iter().filter(move |x| *x != i3);
+        remaining.clone().into_iter().flat_map(move |i4| {
+          let remaining = remaining.clone().into_iter().filter(move |x| *x != i4);
+          remaining.map(move |i5| [*i1, *i2, *i3, *i4, *i5])
+        })
+      })
+    })
+  })
+}
+
 pub fn get_highest_phase_settings(
   sequence: &intcode::IntcodeSequence,
   phase_settings_options: &[u8],
 ) -> isize {
-  phase_settings_options
-    .par_iter()
-    .cloned()
-    .flat_map(move |i1| {
-      phase_settings_options
-        .par_iter()
-        .cloned()
-        .flat_map(move |i2| {
-          phase_settings_options
-            .par_iter()
-            .cloned()
-            .flat_map(move |i3| {
-              phase_settings_options
-                .par_iter()
-                .cloned()
-                .flat_map(move |i4| {
-                  phase_settings_options
-                    .par_iter()
-                    .cloned()
-                    .map(move |i5| [i1, i2, i3, i4, i5])
-                })
-            })
-        })
-    })
+  get_all_phase_setting_combinations(phase_settings_options)
+    .par_bridge()
     .map(|phase_settings| compute_thruster_signal(&sequence, &phase_settings))
     .max()
     .unwrap()
@@ -108,12 +104,18 @@ mod part_one {
       65210
     );
   }
+
+  #[test]
+  fn combinations() {
+    let combinations = get_all_phase_setting_combinations(&(0..5).collect::<Vec<_>>()).count();
+    assert_eq!(combinations, 120);
+  }
+
   #[test]
   fn answer() {
     let sequence = intcode::IntcodeSequence::parse(&PUZZLE_INPUT);
     let result = get_highest_phase_settings(&sequence, &(0..5).collect::<Vec<_>>());
-    assert!(result < 4968420);
-    // assert_eq!(result, 0);
+    assert_eq!(result, 77500);
   }
 }
 
