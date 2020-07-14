@@ -3,6 +3,19 @@ use std::convert::{TryFrom, TryInto};
 pub mod compat;
 
 pub type IntcodeSequence = Vec<isize>;
+pub trait IntcodeSequenceUtils {
+  fn parse(input: &str) -> IntcodeSequence;
+  fn start(&mut self) -> IntcodeComputer;
+}
+impl IntcodeSequenceUtils for IntcodeSequence {
+  fn parse(input: &str) -> IntcodeSequence {
+    parse(input)
+  }
+  fn start(&mut self) -> IntcodeComputer<'_> {
+    IntcodeComputer::new(self).start()
+  }
+}
+
 trait IntcodeIndexable {
   fn index(&self, i: isize) -> isize;
   fn index_mut(&mut self, i: isize) -> &mut isize;
@@ -28,37 +41,70 @@ impl Unsign for isize {
   }
 }
 
+#[derive(Debug)]
 pub struct IntcodeComputerState<'a> {
   pub sequence: &'a mut IntcodeSequence,
   pointer: usize,
 }
 
+#[derive(Debug)]
 pub struct IntcodeComputerStart<'a> {
   pub state: IntcodeComputerState<'a>,
 }
+#[derive(Debug)]
 pub struct IntcodeComputerInputState<'a> {
   pub state: IntcodeComputerState<'a>,
 }
+#[derive(Debug)]
 pub struct IntcodeComputerOutputState<'a> {
   pub state: IntcodeComputerState<'a>,
   pub output: isize,
 }
+#[derive(Debug)]
 pub struct IntcodeComputerHaltState<'a> {
   pub state: IntcodeComputerState<'a>,
 }
 
+#[derive(Debug)]
 pub enum IntcodeComputer<'a> {
   Input(IntcodeComputerInputState<'a>),
   Output(IntcodeComputerOutputState<'a>),
   Halt(IntcodeComputerHaltState<'a>),
 }
-impl IntcodeComputer<'_> {
+#[derive(Debug)]
+pub struct WrongTypeError<'a>(IntcodeComputer<'a>);
+
+impl<'a> IntcodeComputer<'a> {
   pub fn new(sequence: &mut IntcodeSequence) -> IntcodeComputerStart {
     IntcodeComputerStart {
       state: IntcodeComputerState {
         sequence,
         pointer: 0,
       },
+    }
+  }
+
+  pub fn as_input(self) -> Result<IntcodeComputerInputState<'a>, WrongTypeError<'a>> {
+    if let IntcodeComputer::Input(state) = self {
+      Ok(state)
+    } else {
+      Err(WrongTypeError(self))
+    }
+  }
+
+  pub fn as_output(self) -> Result<IntcodeComputerOutputState<'a>, WrongTypeError<'a>> {
+    if let IntcodeComputer::Output(state) = self {
+      Ok(state)
+    } else {
+      Err(WrongTypeError(self))
+    }
+  }
+
+  pub fn as_halt(self) -> Result<IntcodeComputerHaltState<'a>, WrongTypeError<'a>> {
+    if let IntcodeComputer::Halt(state) = self {
+      Ok(state)
+    } else {
+      Err(WrongTypeError(self))
     }
   }
 }
