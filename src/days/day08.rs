@@ -33,7 +33,7 @@ impl SpaceImage {
   pub fn parse(input: &str, width: usize, height: usize) -> Result<SpaceImage, String> {
     let layer_size = width * height;
 
-    if input.chars().count() % layer_size != 0 {
+    if input.len() % layer_size != 0 {
       return Err(
         format!(
           "Input must contain layers sized width:{} and height:{}",
@@ -64,26 +64,8 @@ struct SpaceImageParseIterator<'a> {
 impl<'a> Iterator for SpaceImageParseIterator<'a> {
   type Item = &'a str;
   fn next(&mut self) -> Option<Self::Item> {
-    println!(
-      "remaining_str: {}; layer size: {}",
-      self.remaining_str, self.layer_size
-    );
-
-    // TODO: maybe just insist that each byte is a char, since they're all numbers anyways
-    let char_count = self.remaining_str.chars().count();
-    if char_count >= self.layer_size {
-      println!("chars: {:?}", self.remaining_str.char_indices());
-      let split_index = if char_count < self.layer_size {
-        self
-          .remaining_str
-          .char_indices()
-          .nth(self.layer_size)
-          .unwrap()
-          .0
-      } else {
-        self.layer_size
-      };
-      let (next_layer, remaining_str) = self.remaining_str.split_at(split_index);
+    if self.remaining_str.len() >= self.layer_size {
+      let (next_layer, remaining_str) = self.remaining_str.split_at(self.layer_size);
       self.remaining_str = remaining_str;
       Some(next_layer)
     } else {
@@ -99,14 +81,17 @@ pub struct Layer {
 
 impl Layer {
   fn parse(input: &str, width: usize, height: usize) -> Result<Layer, String> {
-    if input.chars().count() != width * height {
+    if input.len() != width * height {
       return Err(format!("Layer must be sized width:{} and height:{}", width, height).into());
     }
 
     let rows = (0..height).map(|y| {
       (0..width)
-        .map(move |x| input.chars().nth(y * width + x).unwrap())
-        .map(move |c| u8::from_str_radix(&c.to_string(), 10).map_err(|err| err.to_string()))
+        .map(move |x| input.bytes().nth(y * width + x).unwrap())
+        .map(move |b| {
+          let c = char::from(b);
+          u8::from_str_radix(&c.to_string(), 10).map_err(|err| err.to_string())
+        })
         .collect()
     });
 
