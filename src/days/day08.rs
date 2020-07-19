@@ -43,30 +43,51 @@ impl SpaceImage {
       );
     }
 
-    let num_layers = input.chars().count() / layer_size;
+    let layers = SpaceImageParseIterator {
+      remaining_str: input,
+      layer_size,
+    };
 
-    let (first_layer, other_layers) = input.split_at(layer_size);
-    let layers: Vec<&str> = (1..num_layers)
-      .fold(
-        (vec![first_layer], other_layers),
-        |(mut prev_vec, prev_other_layers), i| {
-          let (new_layer, other_layers) = prev_other_layers.split_at(layer_size);
-          prev_vec.push(new_layer);
-
-          if i == num_layers - 1 {
-            assert_eq!(other_layers, "");
-          }
-
-          (prev_vec, other_layers)
-        },
-      )
-      .0;
-
-    let layers = flatten_results(layers.into_iter().map(|x| Layer::parse(x, width, height)));
+    let layers = flatten_results(layers.map(|x| Layer::parse(x, width, height)));
 
     match layers {
       Ok(layers) => Ok(SpaceImage { layers }),
       Err(errs) => Err(errs.join("\n")),
+    }
+  }
+}
+
+struct SpaceImageParseIterator<'a> {
+  remaining_str: &'a str,
+  layer_size: usize,
+}
+impl<'a> Iterator for SpaceImageParseIterator<'a> {
+  type Item = &'a str;
+  fn next(&mut self) -> Option<Self::Item> {
+    println!(
+      "remaining_str: {}; layer size: {}",
+      self.remaining_str, self.layer_size
+    );
+
+    // TODO: maybe just insist that each byte is a char, since they're all numbers anyways
+    let char_count = self.remaining_str.chars().count();
+    if char_count >= self.layer_size {
+      println!("chars: {:?}", self.remaining_str.char_indices());
+      let split_index = if char_count < self.layer_size {
+        self
+          .remaining_str
+          .char_indices()
+          .nth(self.layer_size)
+          .unwrap()
+          .0
+      } else {
+        self.layer_size
+      };
+      let (next_layer, remaining_str) = self.remaining_str.split_at(split_index);
+      self.remaining_str = remaining_str;
+      Some(next_layer)
+    } else {
+      None
     }
   }
 }
@@ -78,8 +99,6 @@ pub struct Layer {
 
 impl Layer {
   fn parse(input: &str, width: usize, height: usize) -> Result<Layer, String> {
-    println!("Layer: {}", input);
-
     if input.chars().count() != width * height {
       return Err(format!("Layer must be sized width:{} and height:{}", width, height).into());
     }
